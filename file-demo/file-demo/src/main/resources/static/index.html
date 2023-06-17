@@ -1,0 +1,291 @@
+ <!DOCTYPE html>
+<html>
+<head>
+    <title>Image Upload</title>
+</head>
+<body>
+    <h1>Image Upload</h1>
+    <form id="imageUploadForm">
+        <input type="file" id="imageInput" accept="image/*" />
+        <button type="submit">Upload</button>
+    </form>
+
+    <script>
+        const form = document.getElementById("imageUploadForm");
+        const imageInput = document.getElementById("imageInput");
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append("file", imageInput.files[0]);
+
+            fetch("/images", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert(data);
+                form.reset();
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Failed to upload the image.");
+            });
+        });
+        
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append("file", imageInput.files[0]);
+
+            fetch("/images", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert(data);
+                form.reset();
+
+                // Display the uploaded image
+                const imageUrl = "/images/" + data.split(": ")[1]; // Extract the image ID from the response message
+                const imageElement = document.createElement("img");
+                imageElement.src = imageUrl;
+                document.body.appendChild(imageElement);
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Failed to upload the image.");
+            });
+        });
+
+     // Create an item in the inventory
+        fetch('/inventory/items', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'Item Name',
+            category: 'Item Category',
+            quantity: 10,
+            // other item properties
+          }),
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Handle the response or perform any necessary actions
+          })
+          .catch(error => {
+            // Handle any errors
+          });
+
+        // Update the status of an item in the inventory
+        fetch('/inventory/items/1/status', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: 'New Status',
+          }),
+        })
+          .then(response => response.json())
+          .then(data => {
+            // Handle the response or perform any necessary actions
+          })
+          .catch(error => {
+            // Handle any errors
+          });
+
+        // Fetch all information on the inventory
+        fetch('/inventory/items')
+          .then(response => response.json())
+          .then(data => {
+            // Handle the response or perform any necessary actions
+          })
+          .catch(error => {
+            // Handle any errors
+          });
+
+        // Remove an item from the inventory
+        fetch('/inventory/items/1', {
+          method: 'DELETE',
+        })
+          .then(response => {
+            if (response.ok) {
+              // Item removed successfully
+            } else {
+              // Item not found or other error occurred
+            }
+          })
+          .catch(error => {
+            // Handle any errors
+          });
+
+        // Get the stock of the inventory
+        fetch('/inventory/stock')
+          .then(response => response.json())
+          .then(data => {
+            // Handle the response or perform any necessary actions
+          })
+          .catch(error => {
+            // Handle any errors
+          });
+    </script>
+
+<html>
+<h1>
+  <title>Inventory Management</title>
+</h1>
+  <h1>Inventory Management</h1>
+  <div>
+    <h2>Create Item</h2>
+    <form id="createItemForm">
+      <label for="itemName">Name:</label>
+      <input type="text" id="itemName" required><br>
+      <label for="itemCategory">Category:</label>
+      <input type="text" id="itemCategory" required><br>
+      <label for="itemQuantity">Quantity:</label>
+      <input type="number" id="itemQuantity" required><br>
+      <button type="submit">Create</button>
+    </form>
+  </div>
+  <div id="inventoryList">
+    <h2>Inventory List</h2>
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryItems">
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Function to fetch inventory items from the API
+    function fetchItems() {
+      const inventoryItems = document.getElementById('inventoryItems');
+      inventoryItems.innerHTML = ''; // Clear existing items
+
+      fetch('/api/inventory/items')
+        .then(response => response.json())
+        .then(data => {
+          data.forEach(item => {
+            const row = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            const categoryCell = document.createElement('td');
+            const quantityCell = document.createElement('td');
+            const statusCell = document.createElement('td');
+            const actionsCell = document.createElement('td');
+            const updateStatusButton = document.createElement('button');
+            const removeButton = document.createElement('button');
+
+            nameCell.textContent = item.name;
+            categoryCell.textContent = item.category;
+            quantityCell.textContent = item.quantity;
+            statusCell.textContent = item.status;
+
+            updateStatusButton.textContent = 'Update Status';
+            updateStatusButton.addEventListener('click', () => {
+              updateStatus(item.id, 'New Status');
+            });
+
+            removeButton.textContent = 'Remove';
+            removeButton.addEventListener('click', () => {
+              removeItem(item.id);
+            });
+
+            actionsCell.appendChild(updateStatusButton);
+            actionsCell.appendChild(removeButton);
+
+            row.appendChild(nameCell);
+            row.appendChild(categoryCell);
+            row.appendChild(quantityCell);
+            row.appendChild(statusCell);
+            row.appendChild(actionsCell);
+
+            inventoryItems.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Function to create an item in the inventory
+    function createItem(event) {
+      event.preventDefault();
+      const form = document.getElementById('createItemForm');
+      const newItem = {
+        name: form.itemName.value,
+        category: form.itemCategory.value,
+        quantity: parseInt(form.itemQuantity.value),
+      };
+
+      fetch('/api/inventory/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newItem)
+      })
+        .then(() => {
+          form.reset();
+          fetchItems(); // Refresh the item list
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Function to update the status of an item in the inventory
+    function updateStatus(itemId, newStatus) {
+      fetch(`/api/inventory/items/${itemId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+        .then(() => {
+          fetchItems(); // Refresh the item list
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Function to remove an item from the inventory
+    function removeItem(itemId) {
+      fetch(`/api/inventory/items/${itemId}`, {
+        method: 'DELETE',
+      })
+        .then(() => {
+          fetchItems(); // Refresh the item list
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    // Fetch initial inventory items
+    fetchItems();
+
+    // Attach event listener to create item form submit event
+    const createItemForm = document.getElementById('createItemForm');
+    createItemForm.addEventListener('submit', createItem);
+  </script>
+</body>
+</html>
+
+
